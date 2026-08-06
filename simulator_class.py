@@ -36,7 +36,11 @@ class QCircuit:
         elif axis == 'z':
             self.state = Rz_target(self.state, theta, target, self.num_qubits)
 
-    
+    def ladder_ansatz(self, theta, size):
+        for i in range(size):
+            self.rotation(theta, 'y', i)
+            if i < size - 1:
+                self.apply_cnot(i, i + 1)
     
 
 

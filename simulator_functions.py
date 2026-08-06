@@ -1,5 +1,4 @@
 import numpy as np
-from simulator_class import QCircuit, RandomQCircuit
 
 
 def string_to_state(s):
@@ -204,6 +203,14 @@ def trace_out(rho, qubit, size):
     return rho_traced_out
 
 def fidelity(state1, state2):
-    return np.abs(np.conj(state1.T) @ state2)**2
+    value = np.abs(np.conj(state1.T) @ state2)**2
+    return float(np.real_if_close(value).item())
 
-
+def create_Z_vector(size):
+    bitstrings = [format(i, '0' + str(size) + 'b') for i in range(2**size)]
+    num_ones = [s.count('1') for s in bitstrings]
+    pm = []
+    for nums in num_ones:
+        term = (-1)**nums
+        pm.append(term)
+    return np.array(pm).reshape(-1, 1)
