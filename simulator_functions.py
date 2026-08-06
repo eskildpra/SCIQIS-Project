@@ -78,6 +78,15 @@ def Z_target(state, target, size):
         gate = np.kron(gate, factors[i])
     return gate @ state
 
+def Y_target(state, target, size):
+    Y = np.array([[0, -1j], [1j, 0]])
+    I = np.eye(2)
+    factors = [Y if i == target else I for i in range(size)]
+    gate = factors[0]
+    for i in range(1, size):
+        gate = np.kron(gate, factors[i])
+    return gate @ state
+
 def Rx_target(state, theta, target, size):
     gate = np.array([[np.cos(theta/2), -1j*np.sin(theta/2)], [-1j*np.sin(theta/2), np.cos(theta/2)]])
     I = np.eye(2)
@@ -194,5 +203,4 @@ def trace_out(rho, qubit, size):
     # Trace out the last two dimensions (the qubit)
     rho_traced_out = np.trace(rho_permuted, axis1=2, axis2=3)
     return rho_traced_out
-
 

@@ -35,3 +35,27 @@ class QCircuit:
             self.state = Ry_target(self.state, theta, target, self.num_qubits)
         elif axis == 'z':
             self.state = Rz_target(self.state, theta, target, self.num_qubits)
+
+
+class RandomQCircuit(QCircuit):
+    def __init__(self, num_qubits, depth):
+        super().__init__(num_qubits)
+        self.depth = depth
+        gatelist = ["H", "X", "Y", "Z", "Rx", "Ry", "Rz", "CNOT"]
+        for qbit in range(self.num_qubits):
+            for d in range(self.depth):
+                gate = np.random.choice(gatelist)
+                if gate in ["H", "X", "Y", "Z"]:
+                    self.apply_gate(globals()[f"{gate}_target"], qbit)
+                elif gate in ["Rx", "Ry", "Rz"]:
+                    theta = np.random.uniform(0, 2 * np.pi)
+                    self.rotation(theta, gate[-1].lower(), qbit)
+                elif gate == "CNOT":
+                    control = np.random.randint(0, self.num_qubits)
+                    target = np.random.randint(0, self.num_qubits)
+                    while target == control:
+                        target = np.random.randint(0, self.num_qubits)
+                    self.apply_cnot(control, target)
+
+
+
