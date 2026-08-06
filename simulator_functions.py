@@ -1,6 +1,5 @@
 import numpy as np
-
-from numpy import size
+from simulator_class import QCircuit, RandomQCircuit
 
 
 def string_to_state(s):
@@ -203,4 +202,8 @@ def trace_out(rho, qubit, size):
     # Trace out the last two dimensions (the qubit)
     rho_traced_out = np.trace(rho_permuted, axis1=2, axis2=3)
     return rho_traced_out
+
+def fidelity(state1, state2):
+    return np.abs(np.conj(state1.T) @ state2)**2
+
 

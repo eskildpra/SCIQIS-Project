@@ -36,6 +36,9 @@ class QCircuit:
         elif axis == 'z':
             self.state = Rz_target(self.state, theta, target, self.num_qubits)
 
+    
+    
+
 
 class RandomQCircuit(QCircuit):
     def __init__(self, num_qubits, depth):
