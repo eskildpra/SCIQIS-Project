@@ -1,4 +1,5 @@
 import numpy as np
+from simulator_class import QCircuit, RandomQCircuit
 
 
 def string_to_state(s):
@@ -214,3 +215,17 @@ def create_Z_vector(size):
         term = (-1)**nums
         pm.append(term)
     return np.array(pm).reshape(-1, 1)
+
+def modular_ladder_ansatz_expected(layer, size, stepsize):
+    theta = np.linspace(0, 2 * np.pi, stepsize)
+    angles = []
+    expected_vals = []
+    for angle in theta:
+        q = QCircuit(size)
+        for l in range(layer):
+            q.ladder_ansatz(angle, size)
+        angles.append(angle)
+        ZZ = create_Z_vector(size)
+        expected_value = np.conj(ZZ).T @ np.abs(q.state)**2
+        expected_vals.append(float(np.real_if_close(expected_value[0, 0])))
+    return angles, expected_vals

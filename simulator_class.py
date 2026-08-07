@@ -9,12 +9,9 @@ class QCircuit:
         self.state[0, 0] = 1 
 
     def apply_gate(self, gate, target):
-        # Accept either a callable gate function (like H_target)
-        # or a full gate matrix (ndarray).
         if callable(gate):
             self.state = gate(self.state, target, self.num_qubits)
         else:
-            # assume `gate` is a full operator matrix acting on the whole system
             self.state = gate @ self.state
 
     def measure(self, qubit):
@@ -39,9 +36,9 @@ class QCircuit:
     def ladder_ansatz(self, theta, size):
         for i in range(size):
             self.rotation(theta, 'y', i)
-            if i < size - 1:
-                self.apply_cnot(i, i + 1)
-    
+        for i in range(size - 1):
+            self.apply_cnot(i, i + 1)
+
 
 
 class RandomQCircuit(QCircuit):
