@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import factorial
+from scipy.linalg import expm
 from matplotlib.patches import Ellipse
 from matplotlib.widgets import Slider, Button
 
@@ -74,28 +75,74 @@ def extract_angle_length_coherent(state, dim):
     return angle, length
 
 
-def plot_coherent_state(alpha, dim, max_x=10, max_p=10):
-    alphaR_init = np.real(alpha)
-    alphaI_init = np.imag(alpha)
-    n_init = 5
-    
-    a_dag = creation_op(dim)
-    
-    def generate_current_state(r, i, n):
-        current_alpha = r + 1j * i
-        current_state = coherent_state(current_alpha, dim)
-        for _ in range(n):
-            current_state = raise_state(current_state, a_dag)
-        return current_state, current_alpha
 
-    state, current_alpha = generate_current_state(alphaR_init, alphaI_init, n_init)
 
+
+def plot_fock_state2(n, dim, max_x=10, max_p=10):
+    state = fock_state(n, dim)
     deltax_mat, deltap_mat = extract_uncertainty(state, dim)
     deltax = float(np.real(np.ravel(deltax_mat)[0]))
     deltap = float(np.real(np.ravel(deltap_mat)[0]))
-    angle, length = extract_angle_length_coherent(state, dim)
     fig, ax = plt.subplots()
-    fig.subplots_adjust(bottom=0.35, left=0.25)
+    ax.set_xlim(-max_x, max_x)
+    ax.set_ylim(-max_p, max_p)
+    ax.set_xlabel('X')
+    ax.set_ylabel('P')
+    ax.set_title(f'Fock State: n={n}')
+    ax.set_aspect('equal')
+    
+    xpos = 0
+    ypos = 0
+    scatter = ax.scatter(xpos, ypos, color='red', label='State center')
+    
+    uncertainty_ellipse = Ellipse(
+        xy=(xpos, ypos), 
+        width=2 * deltax, 
+        height=2 * deltap, 
+        edgecolor='red', 
+        facecolor='red', 
+        alpha=0.3,
+        label='Uncertainty'
+    )
+    ax.add_patch(uncertainty_ellipse)
+    
+    ax.legend()
+    
+    plt.show()
+
+def Wigner_func(state, X, P, dim):
+    a_dag = creation_op(dim)
+    a = np.conjugate(a_dag.T)
+    W = np.zeros((len(X), len(P)), dtype=float)
+    for i, x in enumerate(X):
+        for j, p in enumerate(P):
+            alpha = (x + 1j * p) / np.sqrt(2)
+            D_alpha = expm(alpha * a_dag - np.conjugate(alpha) * a)
+            displaced_state = D_alpha @ state
+            parity_op = np.diag([(-1)**n for n in range(dim)])
+            W[i, j] = np.real((np.conjugate(displaced_state.T) @ parity_op @ displaced_state).item())
+    return W / np.pi
+
+
+def plot_coherent_state(alpha, dim, max_x=10, max_p=10):
+    alphaR_init = np.real(alpha)
+    alphaI_init = np.imag(alpha)
+    
+    def generate_current_state(r, i):
+        current_alpha = r + 1j * i
+        # Use your pre-defined coherent_state function which sums up to the Hilbert space 'dim'
+        current_state = coherent_state(current_alpha, dim)
+        return current_state, current_alpha
+
+    state, current_alpha = generate_current_state(alphaR_init, alphaI_init)
+
+    deltax, deltap = extract_uncertainty(state, dim)
+    angle, length = extract_angle_length_coherent(state, dim)
+    
+    fig, ax = plt.subplots()
+    # Adjusted bottom margin since we have one less slider
+    fig.subplots_adjust(bottom=0.25, left=0.25)
+    
     xpos = np.sqrt(2) * length * np.cos(angle)
     ypos = np.sqrt(2) * length * np.sin(angle)
 
@@ -115,40 +162,40 @@ def plot_coherent_state(alpha, dim, max_x=10, max_p=10):
     ax.set_ylim(-max_p, max_p)
     ax.set_xlabel('X')
     ax.set_ylabel('P')
-    ax.set_title(f'State: alpha={current_alpha:.1f}, n={n_init}')
+    ax.set_title(f'Coherent State: alpha={current_alpha:.1f}')
     ax.set_aspect('equal')
     ax.legend()
     
-    ax_alphar = fig.add_axes([0.25, 0.20, 0.65, 0.03])
+    # Adjusted the y-positions of the sliders to fit nicely
+    ax_alphar = fig.add_axes([0.25, 0.12, 0.65, 0.03])
     re_slider = Slider(ax_alphar, 'Re(alpha)', -5, 5, valinit=alphaR_init)
     
-    ax_alphai = fig.add_axes([0.25, 0.12, 0.65, 0.03])
+    ax_alphai = fig.add_axes([0.25, 0.05, 0.65, 0.03])
     im_slider = Slider(ax_alphai, 'Im(alpha)', -5, 5, valinit=alphaI_init)
     
-    ax_n = fig.add_axes([0.25, 0.04, 0.65, 0.03])
-    n_slider = Slider(ax_n, 'Photons (n)', 0, 25, valinit=n_init, valstep=1)
     def update(val):
         r = re_slider.val
         i = im_slider.val
-        n_val = int(n_slider.val)
-        new_state, new_alpha = generate_current_state(r, i, n_val)
-        n_deltax_mat, n_deltap_mat = extract_uncertainty(new_state, dim)
-        n_deltax = float(np.real(np.ravel(n_deltax_mat)[0]))
-        n_deltap = float(np.real(np.ravel(n_deltap_mat)[0]))
+        
+        new_state, new_alpha = generate_current_state(r, i)
+        
+        n_deltax, n_deltap = extract_uncertainty(new_state, dim)
         n_angle, n_length = extract_angle_length_coherent(new_state, dim)
+        
         n_xpos = np.sqrt(2) * n_length * np.cos(n_angle)
         n_ypos = np.sqrt(2) * n_length * np.sin(n_angle)
+        
         scatter.set_offsets(np.c_[n_xpos, n_ypos])
         uncertainty_ellipse.center = (n_xpos, n_ypos)
         uncertainty_ellipse.width = 2 * n_deltax
         uncertainty_ellipse.height = 2 * n_deltap
         
-        ax.set_title(f'State: alpha={new_alpha:.1f}, n={n_val}')
+        ax.set_title(f'Coherent State: alpha={new_alpha:.1f}')
         fig.canvas.draw_idle()
 
     re_slider.on_changed(update)
     im_slider.on_changed(update)
-    n_slider.on_changed(update)
     
     plt.show()
-    return re_slider, im_slider, n_slider
+    # Now only returning 2 sliders so they don't get garbage collected
+    return re_slider, im_slider
